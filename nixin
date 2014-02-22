@@ -1,0 +1,182 @@
+#!/bin/sh
+
+# A high level NixOS helper script
+
+# pkgName columnOffset
+pkgName() {
+  awk -F'-' "
+  {
+    printf \$$1
+    for(i=$(($1+1)); i<=NF; i++) {
+      if(!match(\$i, /[0-9]+.*/)) {
+        printf \"-%s\", \$i
+      }
+    }
+    print \"\"
+  }
+  "
+}
+
+setProxy() {
+  export http_proxy=$1
+  NIX_REMOTE= nix-build -A system "<nixpkgs>"
+  nixos-rebuild switch
+}
+
+cleanOld() {
+  nix-collect-garbage -d
+}
+
+clearMyUserProfile() {
+  nix-env -e '*'
+}
+
+clearOtherUserProfile() {
+  sudo [ -L "/nix/var/nix/profiles/per-user/$1/profile" ] && nix-env -p /nix/var/nix/profiles/per-user/$1/profile -e '*'
+}
+
+clearSystemProfile() {
+  sudo nix-env -p /nix/var/nix/profiles/system -e '*'
+}
+
+listSystemInstalledPkgs() {
+  nix-store -q --references /var/run/current-system/sw | pkgName 2 | sort
+}
+
+listMyInstalledPkgs() {
+  nix-env -q '*' | pkgName 1 | sort
+}
+
+listUserInstalledPkgs() {
+  [ -L "/nix/var/nix/profiles/per-user/$1/profile" ] && sudo nix-env -p /nix/var/nix/profiles/per-user/$1/profile -q '*' | pkgName 1 | sort
+}
+
+repairBrokenDerivations() {
+  sudo NIX_REMOTE= nix-store --verify --check-contents --repair
+}
+
+repairBrokenGhcPkgs() {
+  ghcVersion=`ghc --version | awk '{print $8}'`
+  ghc-pkg check 2>&1 | awk  -F' ' '/dependency/
+    {
+      gsub(/"/,"")
+      split($2,pkg,"-")
+      switch(length(pkg)) {
+        case 3:
+          print("haskell-"pkg[1]"-ghc'$ghcVersion'-"pkg[2])
+          break
+        case 4:
+          print("haskell-"pkg[1]"-"pkg[2]"-ghc'$ghcVersion'-"pkg[3])
+        default:
+          break
+      }
+    }' | sort -u | grep -v dependency | xargs nix-env -i
+}
+
+listMyGenerations() {
+  nix-env --list-generations
+}
+
+listUserGenerations() {
+  sudo nix-env -p /nix/var/nix/profiles/per-user/$1/profile --list-generations
+}
+
+listSystemGenerations() {
+  sudo nix-env -p /nix/var/nix/profiles/system --list-generations
+}
+
+updateSystem() {
+  sudo nixos-rebuild switch
+}
+
+findPackage() {
+  nix-env -qa \* -P -f "<nixpkgs>" | grep $1
+}
+
+installPackage() {
+  nix-env -i "$@"
+}
+
+removePackage() {
+  nix-env -e "$@"
+}
+
+usage() {
+    cat <<EOF
+nixin operations:
+  ([u]pdate)                             --  Update system configuration
+  ([i]nstall) PKG                        --  Install PKG, as current user
+  ([d]elete) PKG                         --  Remove PKG, as current user
+  ([f]ind) PKG                           --  Search/Grep for PKG
+  ([l]ist) [([u]ser USER|[s]ystem)]      --  List installed packages in sytem or user profile
+  ([c]lear) [([u]ser USER|[s]ystem)]     --  Clear current user profile or specific system profile
+  ([r]epair) ([d]erivations|[g]hcs)      --  Repair broken packages, both system derivation and user ghc-pkgs
+EOF
+}
+
+case $1 in
+    u | update )
+        updateSystem
+        ;;
+    i | install )
+        shift
+        installPackage $1
+        ;;
+    d | delete )
+        shift
+        removePackage $1
+        ;;
+    f | find )
+        shift
+        findPackage $1
+        ;;
+    l | list)
+        shift
+        case $1 in
+            s | sys | system)
+                shift
+                listSystemInstalledPkgs
+                ;;
+            u | usr | user)
+                shift
+                listUserInstalledPkgs $1
+                ;;
+            * )
+                listMyInstalledPkgs
+                ;;
+        esac
+        ;;
+    c | clear)
+        shift
+        case $1 in
+            s | sys | system)
+                shift
+                clearSystemProfile
+                ;;
+            u | usr | user)
+                shift
+                clearUserProfile $1
+                ;;
+            *)
+                clearMyUserProfile
+                ;;
+        esac
+        ;;
+    r | repair)
+        shift
+        case $1 in
+            d | derivation)
+                repairBrokenDerivations
+                ;;
+            g | ghcs)
+                repairBrokenGhcPkgs
+                ;;
+            *)
+                echo "Please provide a scope ([d]erivations|[g]hcs)"
+                ;;
+        esac
+        ;;
+    * )
+        usage
+        ;;
+esac
