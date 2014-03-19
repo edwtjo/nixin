@@ -17,6 +17,12 @@ pkgName() {
   "
 }
 
+hasExe() {
+  ret=1
+  for bp in $(echo $PATH | sed -e "s/:/ /g"); do [ -e $bp/$1 ] && ret=0;done
+  return $ret
+}
+
 setProxy() {
   export http_proxy=$1
   NIX_REMOTE= nix-build -A system "<nixpkgs>"
@@ -101,9 +107,18 @@ removePackage() {
   nix-env -e "$@"
 }
 
+startRepl() {
+  hasExe nix-repl
+  if [ $? -ne 0 ];then
+    installPackage nix-repl
+  fi
+  nix-repl '<nixpkgs>' '<nixos>'
+}
+
 usage() {
     cat <<EOF
 nixin operations:
+  (repl)                                 --  Initiate nixos/nixpkgs REPL session
   ([u]pdate)                             --  Update system configuration
   ([i]nstall) PKG                        --  Install PKG, as current user
   ([d]elete) PKG                         --  Remove PKG, as current user
@@ -115,6 +130,9 @@ EOF
 }
 
 case $1 in
+    repl )
+        startRepl
+        ;;
     u | update )
         updateSystem
         ;;
@@ -176,7 +194,7 @@ case $1 in
                 ;;
         esac
         ;;
-    * )
+   * )
         usage
         ;;
 esac
