@@ -2,6 +2,11 @@
 
 # A high level NixOS helper script
 
+## CONFIG (change this to point to your checkout)
+NIXPKGS_REPO=~/repos/github/edwtjo/nixpkgs/
+
+## CODE
+
 # pkgName columnOffset
 pkgName() {
   awk -F'-' "
@@ -93,6 +98,10 @@ listSystemGenerations() {
 
 updateSystem() {
   sudo nixos-rebuild switch
+}
+
+buildExperimental() {
+  sudo nixos-rebuild -p experimental -I nixos=$NIXPKGS_REPO/nixos -I nixpkgs=$NIXPKGS_REPO build
 }
 
 findPackage() {
@@ -194,6 +203,9 @@ case $1 in
                 ;;
         esac
         ;;
+  exp )
+    buildExperimental
+    ;;
    * )
         usage
         ;;
