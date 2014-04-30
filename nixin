@@ -225,7 +225,7 @@ case $1 in
                 ;;
             u | usr | user)
                 shift
-                clearUserProfile $1
+                clearOtherUserProfile $1
                 ;;
             *)
                 clearMyUserProfile
