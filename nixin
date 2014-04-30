@@ -124,6 +124,33 @@ startRepl() {
   nix-repl '<nixpkgs>' '<nixos>'
 }
 
+listSystemProfiles() {
+  for profile in /nix/var/nix/profiles/system-profiles/*;do
+    echo `basename $profile` | awk -F'-' '{print $1}'
+  done | uniq | sort
+}
+
+listUserProfiles() {
+  if [ -e /nix/profiles/per-user/$1/* ];then
+    for profile in /nix/var/nix/profiles/per-user/$1/*;do
+      echo `# $profile`
+    done
+  else
+    echo "no profiles recorded"
+  fi
+}
+
+listAllProfiles() {
+  echo "# system profiles"
+  listSystemProfiles
+  echo
+  for usr in /nix/var/nix/profiles/per-user/*;do
+    echo "# `basename $usr`'s profiles"
+    listUserProfiles $usr
+    echo ""
+  done
+}
+
 usage() {
     cat <<EOF
 nixin operations:
@@ -171,6 +198,22 @@ case $1 in
             * )
                 listMyInstalledPkgs
                 ;;
+        esac
+        ;;
+    lp | list-profile)
+        shift
+        case $1 in
+          s | sys | system)
+            shift
+            listSystemProfiles
+            ;;
+          u | usr | user)
+            shift
+            listUserProfiles $1
+            ;;
+          * )
+            listAllProfiles
+            ;;
         esac
         ;;
     c | clear)
