@@ -50,6 +50,18 @@ clearSystemProfile() {
   sudo nix-env -p /nix/var/nix/profiles/system -e '*'
 }
 
+clearOtherSystemProfile() {
+  local storePath=$(readlink /nix/var/nix/profiles/system-profiles/$1)
+  if [ "$(dirname $storePath)" = "." ]
+  then
+    clearOtherUserProfile $(basename storePath)
+    sudo rm $storePath
+  else
+    sudo nix-store --delete $storePath
+    sudo nix-store --gc
+  fi
+}
+
 listSystemInstalledPkgs() {
   nix-store -q --references /var/run/current-system/sw | pkgName 2 | sort
 }
@@ -97,7 +109,17 @@ listSystemGenerations() {
 }
 
 updateSystem() {
-  sudo nixos-rebuild switch
+  sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch
+}
+
+upgradeSystem() {
+  sudo nix-channel --add https://nixos.org/channels/nixos-$1/ nixos
+  sudo nixos-rebuild switch --upgrade
+}
+
+switchToProfile() {
+  unset NIX_REMOTE
+  sudo nixos-rebuild -p $1 switch
 }
 
 buildExperimental() {
@@ -154,14 +176,14 @@ listAllProfiles() {
 usage() {
     cat <<EOF
 nixin operations:
-  (repl)                                 --  Initiate nixos/nixpkgs REPL session
-  ([u]pdate)                             --  Update system configuration
-  ([i]nstall) PKG                        --  Install PKG, as current user
-  ([d]elete) PKG                         --  Remove PKG, as current user
-  ([f]ind) PKG                           --  Search/Grep for PKG
-  ([l]ist) [([u]ser USER|[s]ystem)]      --  List installed packages in sytem or user profile
-  ([c]lear) [([u]ser USER|[s]ystem)]     --  Clear current user profile or specific system profile
-  ([r]epair) ([d]erivations|[g]hcs)      --  Repair broken packages, both system derivation and user ghc-pkgs
+  (repl)                                        --  Initiate nixos/nixpkgs REPL session
+  ([u]pdate)                                    --  Update system configuration
+  ([i]nstall) PKG                               --  Install PKG, as current user
+  ([d]elete) PKG                                --  Remove PKG, as current user
+  ([f]ind) PKG                                  --  Search/Grep for PKG
+  ([l]ist) [([u]ser USER|[s]ystem [NAME])]      --  List installed packages in sytem or user profile
+  ([c]lear) [([u]ser USER|[s]ystem [NAME])]     --  Clear current user profile or specific system profile
+  ([r]epair) ([d]erivations|[g]hcs)             --  Repair broken packages, both system derivation and user ghc-pkgs
 EOF
 }
 
@@ -177,7 +199,6 @@ case $1 in
         installPackage $1
         ;;
     d | delete )
-        shift
         removePackage $1
         ;;
     f | find )
@@ -221,11 +242,19 @@ case $1 in
         case $1 in
             s | sys | system)
                 shift
-                clearSystemProfile
+                if [ -z "$1" ];then
+                    clearSystemProfile
+                else
+                    clearOtherSystemProfile $1
+                fi
                 ;;
             u | usr | user)
                 shift
-                clearOtherUserProfile $1
+                if [ -z "$1" ];then
+                    clearMyUserProfile
+                else
+                    clearOtherUserProfile $1
+                fi
                 ;;
             *)
                 clearMyUserProfile
@@ -248,6 +277,9 @@ case $1 in
         ;;
   exp )
     buildExperimental
+    ;;
+  upgrade )
+    upgradeSystem 14.04
     ;;
    * )
         usage
