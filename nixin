@@ -136,7 +136,7 @@ buildExperimental() {
 }
 
 findPackage() {
-  nix-env -qa \* -P -f "<nixpkgs>" | grep $1
+  nix-env -qa \* -P -f $NIXPKGS_REPO | grep $1
 }
 
 installPackage() {
