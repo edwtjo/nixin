@@ -140,7 +140,7 @@ findPackage() {
 }
 
 installPackage() {
-  nix-env -i "$@"
+  nix-env -f $NIXPKGS_REPO -i "$@"
 }
 
 removePackage() {
