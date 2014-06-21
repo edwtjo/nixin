@@ -3,7 +3,7 @@
 # A high level NixOS helper script
 
 ## CONFIG (change this to point to your checkout)
-NIXPKGS_REPO=~/repos/github/edwtjo/nixpkgs/
+NIXPKGS_REPO=~/repos/github/nixos-nixpkgs/
 
 ## CODE
 
@@ -30,8 +30,17 @@ hasExe() {
 
 setProxy() {
   export http_proxy=$1
-  NIX_REMOTE= nix-build -A system "<nixpkgs>"
-  nixos-rebuild switch
+  unset NIX_REMOTE
+  sudo nix-build -A system "<nixos>"
+  sudo nixos-rebuild switch --option use-binary-caches false
+
+}
+
+unsetProxy() {
+  unset http_proxy
+  unset NIX_REMOTE
+  sudo nix-build -A system "<nixos>"
+  sudo nixos-rebuild switch --option use-binary-caches false
 }
 
 cleanOld() {
@@ -237,6 +246,19 @@ case $1 in
             ;;
         esac
         ;;
+    p | proxy)
+        shift
+        case $1 in
+            http://*)
+                echo "Setting proxy to: $1"
+                setProxy $1
+                ;;
+            *)
+                echo "Unsetting proxy"
+                unsetProxy
+                ;;
+        esac
+        ;;
     c | clear)
         shift
         case $1 in
@@ -275,13 +297,13 @@ case $1 in
                 ;;
         esac
         ;;
-  exp )
-    buildExperimental
-    ;;
-  upgrade )
-    upgradeSystem 14.04
-    ;;
-   * )
+    exp )
+        buildExperimental
+        ;;
+    upgrade )
+        upgradeSystem 14.04
+        ;;
+    * )
         usage
         ;;
 esac
