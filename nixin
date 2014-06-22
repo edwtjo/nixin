@@ -2,11 +2,6 @@
 
 # A high level NixOS helper script
 
-## CONFIG (change this to point to your checkout)
-NIXPKGS_REPO=~/repos/github/nixos-nixpkgs/
-
-## CODE
-
 # pkgName columnOffset
 pkgName() {
   awk -F'-' "
