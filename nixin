@@ -2,6 +2,13 @@
 
 # A high level NixOS helper script
 
+die() {
+    echo $1
+    exit 1
+}
+
+[ -z $NIXPKGS_REPO ] && die "You need to set NIXPKGS_REPO in your environment"
+
 # pkgName columnOffset
 pkgName() {
   awk -F'-' "
