@@ -1,6 +1,9 @@
 #!/bin/sh
 
 # A high level NixOS helper script
+#
+# This script is a complete HACK it isn't intended to be
+# beatiful, just useful.
 
 die() {
     echo $1
@@ -35,7 +38,6 @@ setProxy() {
   unset NIX_REMOTE
   sudo nix-build -A system "<nixos>"
   sudo nixos-rebuild switch --option use-binary-caches false
-
 }
 
 unsetProxy() {
@@ -128,6 +130,19 @@ upgradeSystem() {
   sudo nixos-rebuild switch --upgrade
 }
 
+syncRepo() {
+  cd $NIXPKGS_REPO
+  # could be useful if we want to checkout master instead of working with the
+  # current checked out branch. leaving it here for now.
+  IFS="/" read refs heads branch < .git/HEAD
+  # we might not be using "origin" for NixOS/nixpkgs.
+  git remote --verbose show | grep "github.com.NixOS/nixpkgs.*fetch" | read remote url type
+  git fetch $remote
+  # rebase the current branch onto nixpkgs master.
+  git rebase $remote/master
+  cd -
+}
+
 switchToProfile() {
   unset NIX_REMOTE
   sudo nixos-rebuild -p $1 switch
@@ -189,12 +204,14 @@ usage() {
 nixin operations:
   (repl)                                        --  Initiate nixos/nixpkgs REPL session
   ([u]pdate)                                    --  Update system configuration
+  ([s]ync)                                      --  Sync package and operatingsystem expressions
   ([i]nstall) PKG                               --  Install PKG, as current user
   ([d]elete) PKG                                --  Remove PKG, as current user
   ([f]ind) PKG                                  --  Search/Grep for PKG
   ([l]ist) [([u]ser USER|[s]ystem [NAME])]      --  List installed packages in sytem or user profile
   ([c]lear) [([u]ser USER|[s]ystem [NAME])]     --  Clear current user profile or specific system profile
   ([r]epair) ([d]erivations|[g]hcs)             --  Repair broken packages, both system derivation and user ghc-pkgs
+  ([p]roxy) [URL]                               --  Set or unset the NixOS system proxy, assumes correct alterations of configuration.nix
 EOF
 }
 
@@ -204,6 +221,9 @@ case $1 in
         ;;
     u | update )
         updateSystem
+        ;;
+    s | sync )
+        syncRepo
         ;;
     i | install )
         shift
@@ -298,12 +318,6 @@ case $1 in
                 echo "Please provide a scope ([d]erivations|[g]hcs)"
                 ;;
         esac
-        ;;
-    exp )
-        buildExperimental
-        ;;
-    upgrade )
-        upgradeSystem 14.04
         ;;
     * )
         usage
