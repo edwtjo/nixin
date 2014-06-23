@@ -3,7 +3,7 @@
 # A high level NixOS helper script
 #
 # This script is a complete HACK it isn't intended to be
-# beatiful, just useful.
+# elegant, just useful.
 
 die() {
     echo $1
@@ -46,15 +46,15 @@ hasExe() {
 setProxy() {
   export http_proxy=$1
   unset NIX_REMOTE
-  sudo nix-build -A system "<nixos>"
-  sudo nixos-rebuild switch --option use-binary-caches false
+  sudo nix-build -A system -I nixos=$NIXPKGS_REPO/nixos
+  sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --option use-binary-caches false
 }
 
 unsetProxy() {
   unset http_proxy
   unset NIX_REMOTE
-  sudo nix-build -A system "<nixos>"
-  sudo nixos-rebuild switch --option use-binary-caches false
+  sudo nix-build -A system -I nixos=$NIXPKGS_REPO/nixos
+  sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --option use-binary-caches false
 }
 
 cleanOld() {
