@@ -10,7 +10,17 @@ die() {
     exit 1
 }
 
+isRepo() {
+  export GIT_DIR=$NIXPKGS_REPO/.git
+  git remote --verbose show | grep "github.com.NixOS/nixpkgs.*fetch" > .remotes-info
+  read remote url type < .remotes-info
+  rm -f .remotes-info
+  unset GIT_DIR
+  [ -n "$remote" ] && return 0 || return 1;
+}
+
 [ -z $NIXPKGS_REPO ] && die "You need to set NIXPKGS_REPO in your environment"
+[ ! isRepo ] && die "NIXPKGS_REPO isn't pointing to a nixpkgs checkout"
 
 # pkgName columnOffset
 pkgName() {
@@ -132,24 +142,18 @@ upgradeSystem() {
 
 syncRepo() {
   cd $NIXPKGS_REPO
-  # could be useful if we want to checkout master instead of working with the
-  # current checked out branch. leaving it here for now.
-  IFS="/" read refs heads branch < .git/HEAD
-  # we might not be using "origin" for NixOS/nixpkgs.
-  git remote --verbose show | grep "github.com.NixOS/nixpkgs.*fetch" | read remote url type
+  IFS="/" read refs heads branch < $NIXPKGS_REPO/.git/HEAD
+  git remote --verbose show | grep "github.com.NixOS/nixpkgs.*fetch" > .remotes-info
+  read remote url type < .remotes-info
+  rm -f .remotes-info
   git fetch $remote
-  # rebase the current branch onto nixpkgs master.
-  git rebase $remote/master
+  git rebase $remote/master $branch
   cd -
 }
 
 switchToProfile() {
   unset NIX_REMOTE
   sudo nixos-rebuild -p $1 switch
-}
-
-buildExperimental() {
-  sudo nixos-rebuild -p experimental -I nixos=$NIXPKGS_REPO/nixos -I nixpkgs=$NIXPKGS_REPO build
 }
 
 findPackage() {
