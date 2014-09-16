@@ -210,7 +210,7 @@ startRepl() {
   if [ $? -ne 0 ];then
     installPackage nix-repl
   fi
-  nix-repl '<nixpkgs>' '<nixos>'
+  nix-repl $NIXPKGS_REPO $NIXPKGS_REPO/nixos
 }
 
 listSystemProfiles() {
