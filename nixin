@@ -229,6 +229,14 @@ listUserProfiles() {
   fi
 }
 
+listLatestHydra() {
+  curl -sI http://nixos.org/channels/nixpkgs-$1 | grep Location | cut -d'.' -f4
+}
+
+listLatestUnstable() {
+  listLatestHydra unstable
+}
+
 listAllProfiles() {
   echo "# system profiles"
   listSystemProfiles
@@ -291,6 +299,14 @@ case $1 in
             u | usr | user)
                 shift
                 listUserInstalledPkgs $1
+                ;;
+            h | hydra)
+                shift
+                if [ -z "$1" ];then
+                  listLatestUnstable
+                else
+                  listLatestHydra $1
+                fi
                 ;;
             * )
                 listMyInstalledPkgs
