@@ -292,15 +292,15 @@ case $1 in
     l | list)
         shift
         case $1 in
-            s | sys | system)
+            s | sys | system )
                 shift
                 listSystemInstalledPkgs
                 ;;
-            u | usr | user)
+            u | usr | user )
                 shift
                 listUserInstalledPkgs $1
                 ;;
-            h | hydra)
+            h | hydra )
                 shift
                 if [ -z "$1" ];then
                   listLatestUnstable
@@ -313,14 +313,14 @@ case $1 in
                 ;;
         esac
         ;;
-    lp | list-profile)
+    lp | list-profile )
         shift
         case $1 in
-          s | sys | system)
+          s | sys | system )
             shift
             listSystemProfiles
             ;;
-          u | usr | user)
+          u | usr | user )
             shift
             listUserProfiles $1
             ;;
@@ -329,23 +329,23 @@ case $1 in
             ;;
         esac
         ;;
-    p | proxy)
+    p | proxy )
         shift
         case $1 in
-            http://*)
+            http://* )
                 echo "Setting proxy to: $1"
                 setProxy $1
                 ;;
-            *)
+            * )
                 echo "Unsetting proxy"
                 unsetProxy
                 ;;
         esac
         ;;
-    c | clear)
+    c | clear )
         shift
         case $1 in
-            s | sys | system)
+            s | sys | system )
                 shift
                 if [ -z "$1" ];then
                     clearSystemProfile
@@ -353,7 +353,7 @@ case $1 in
                     clearOtherSystemProfile $1
                 fi
                 ;;
-            u | usr | user)
+            u | usr | user )
                 shift
                 if [ -z "$1" ];then
                     clearMyUserProfile
@@ -361,18 +361,18 @@ case $1 in
                     clearOtherUserProfile $1
                 fi
                 ;;
-            *)
+            * )
                 clearMyUserProfile
                 ;;
         esac
         ;;
-    r | repair)
+    r | repair )
         shift
         case $1 in
-            d | derivation)
+            d | derivation )
                 repairBrokenDerivations
                 ;;
-            g | ghcs)
+            g | ghcs )
                 repairBrokenGhcPkgs
                 ;;
             *)
