@@ -301,12 +301,7 @@ case $1 in
                 listUserInstalledPkgs $1
                 ;;
             h | hydra )
-                shift
-                if [ -z "$1" ];then
-                  listLatestUnstable
-                else
-                  listLatestHydra $1
-                fi
+                listLatestUnstable
                 ;;
             * )
                 listMyInstalledPkgs
