@@ -119,6 +119,14 @@ repairBrokenGhcPkgs() {
     }' | sort -u | grep -v dependency | xargs nix-env -i
 }
 
+repairBrokenGrub() {
+  system=$(ls -l /nix/var/nix/profiles/system-* | grep `ls -ld /run/booted-system|awk '{print $11}'`|awk '{print $9}'|awk -F'-' '{print $2}')
+  echo "Latest boot was $system, resetting current to booted system profile and rebuilding"
+  sudo nix-env -p /nix/var/nix/profiles/system -G $system \
+      && cleanOld \
+      && updateSystem
+}
+
 listMyGenerations() {
   nix-env --list-generations
 }
@@ -370,8 +378,11 @@ case $1 in
             g | ghcs )
                 repairBrokenGhcPkgs
                 ;;
-            *)
-                echo "Please provide a scope ([d]erivations|[g]hcs)"
+            r | grub )
+                repairBrokenGrub
+                ;;
+            * )
+                echo "Please provide a scope ([d]erivations|[g]hcs|g[r]ub)"
                 ;;
         esac
         ;;
