@@ -205,6 +205,18 @@ findPackage() {
   nix-env -qa \* -P -f $NIXPKGS_REPO | grep $1
 }
 
+buildPackage() {
+  nix-build -f $NIXPKGS_REPO -A $1 --argstr system $2
+}
+
+build64BitPackage() {
+  buildPackage $1 "x86_64-linux"
+}
+
+build32BitPackage() {
+  buildPackage $1 "i686-linux"
+}
+
 installPackage() {
   nix-env -f $NIXPKGS_REPO -i "$@"
 }
@@ -289,6 +301,22 @@ case $1 in
     i | install )
         shift
         installPackage $1
+        ;;
+    b | build )
+        shift
+        case $1 in
+            32 | i686 )
+                shift
+                build32BitPackage $1
+                ;;
+            64 | x64 )
+                shift
+                build64BitPackage $1
+                ;;
+            * )
+                buildPackage $1 $2
+                ;;
+        esac
         ;;
     d | delete )
         removePackage $1
