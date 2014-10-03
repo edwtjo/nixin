@@ -233,6 +233,10 @@ startRepl() {
   nix-repl $NIXPKGS_REPO $NIXPKGS_REPO/nixos
 }
 
+startShell() {
+  NIX_PATH="nixpkgs=$NIXPKGS_REPO" nix-shell
+}
+
 listSystemProfiles() {
   for profile in /nix/var/nix/profiles/system-profiles/*;do
     echo `basename $profile` | awk -F'-' '{print $1}'
@@ -414,6 +418,8 @@ case $1 in
                 ;;
         esac
         ;;
+    sh | shell )
+        startShell
     * )
         usage
         ;;
