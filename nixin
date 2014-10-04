@@ -57,8 +57,13 @@ unsetProxy() {
   sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --option use-binary-caches false
 }
 
+packStore() {
+  sudo nix-store --optimize
+}
+
 cleanOld() {
   sudo nix-collect-garbage -d
+  packStore
 }
 
 clearMyUserProfile() {
@@ -420,6 +425,10 @@ case $1 in
         ;;
     sh | shell )
         startShell
+        ;;
+    pack )
+        packStore
+        ;;
     * )
         usage
         ;;
