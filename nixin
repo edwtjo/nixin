@@ -46,15 +46,17 @@ hasExe() {
 setProxy() {
   export http_proxy=$1
   unset NIX_REMOTE
-  sudo nix-build -A system -I nixos=$NIXPKGS_REPO/nixos
-  sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --option use-binary-caches false
+  export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
+  sudo sed -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
+  sudo nix-build -A system "<nixos>"
 }
 
 unsetProxy() {
   unset http_proxy
   unset NIX_REMOTE
-  sudo nix-build -A system -I nixos=$NIXPKGS_REPO/nixos
-  sudo nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --option use-binary-caches false
+  export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
+  sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
+  sudo nix-build -A system "<nixos>"
 }
 
 packStore() {
