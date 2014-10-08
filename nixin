@@ -99,10 +99,10 @@ setProxy() {
   lastPos=$(toCurrRepo)
   export http_proxy=$1
   unset NIX_REMOTE
-  export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
+  unset NIX_PATH
   sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo sed -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
-  sudo nix-build -A system "<nixos>"
+  sudo nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>"
   checkoutRepo $lastPos
 }
 
@@ -112,7 +112,7 @@ unsetProxy() {
   unset NIX_REMOTE
   export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
   sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
-  sudo nix-build -A system "<nixos>"
+  sudo nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>"
   checkoutRepo $lastPos
 }
 
