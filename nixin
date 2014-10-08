@@ -43,20 +43,77 @@ hasExe() {
   return $ret
 }
 
+bootSha() {
+  systemSha booted
+}
+
+currentSha() {
+  systemSha current
+}
+
+systemSha() {
+  ls -ld /run/$1-system|awk -F'.' '{print $4}'
+}
+
+toRepo() {
+  cd $NIXPKGS_REPO 2>&- >&-
+}
+
+fromDir() {
+  cd - 2>&- >&-
+}
+
+repoPosition() {
+  cat $NIXPKGS_REPO/.git/refs/heads/$1 | cut -b -7
+}
+
+checkoutRepo() {
+  local sha=$1
+  local pos=$(repoPosition master)
+  local repoOwner=$(dirOwner $NIXPKGS_REPO)
+  local repoGroup=$(dirGroup $NIXPKGS_REPO)
+  toRepo
+  echo "$pos"
+  sudo git checkout $sha 2>&- >&- || exit 1
+  sudo chown $repoOwner:$repoGroup -R $NIXPKGS_REPO/.git 2>&- >&-
+  fromDir
+}
+
+toBootRepo() {
+  checkoutRepo $(bootSha)
+}
+
+toCurrRepo() {
+  checkoutRepo $(currentSha)
+}
+
+dirOwner() {
+  ls -dl . | awk '{print $3}'
+}
+
+dirGroup() {
+  ls -dl . | awk '{print $4}'
+}
+
 setProxy() {
+  lastPos=$(toCurrRepo)
   export http_proxy=$1
   unset NIX_REMOTE
   export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
-  sudo sed -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
+  sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
+  sudo sed -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
   sudo nix-build -A system "<nixos>"
+  checkoutRepo $lastPos
 }
 
 unsetProxy() {
+  lastPos=$(toCurrRepo)
   unset http_proxy
   unset NIX_REMOTE
   export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
   sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo nix-build -A system "<nixos>"
+  checkoutRepo $lastPos
 }
 
 packStore() {
