@@ -165,22 +165,31 @@ repairBrokenDerivations() {
   sudo NIX_REMOTE= nix-store --verify --check-contents --repair
 }
 
+installHsPkg() {
+  local ghcVersion=`ghc --version | awk '{print $8}'`
+  local pkg=$@
+  local hsPkgs="haskellPackages_ghc"$(echo -n $ghcVersion|tr -d ".")
+  local pkgAttrCamel=$hsPkgs"."$(echo -n $pkg|awk -F '-' '
+     { $NF = "";
+       res = res $1
+       for (i = 2 ; i < NF ; i++) {
+         res = res toupper(substr($i,1,1)) tolower(substr($i,2));
+       }
+       print res;
+     }
+    ')
+  local pkgAttrDash=$hsPkgs"."$(echo -n $pkg|awk -F'-' '{OFS="-";$NF="";print substr($0, 0, length($0)-1)}')
+  echo "CC:"$pkgAttrCamel", D:"$pkgAttrDash
+  if [ "$pkgAttrCamel" == "$pkgAttrDash" ]; then
+    installIntoCurrentSystem $pkgAttrCamel
+  else
+    installIntoCurrentSystem $pkgAttrCamel || installIntoCurrentSystem $pkgAttrDash
+  fi
+}
+
 repairBrokenGhcPkgs() {
-  ghcVersion=`ghc --version | awk '{print $8}'`
-  ghc-pkg check 2>&1 | awk  -F' ' '/dependency/
-    {
-      gsub(/"/,"")
-      split($2,pkg,"-")
-      switch(length(pkg)) {
-        case 3:
-          print("haskell-"pkg[1]"-ghc'$ghcVersion'-"pkg[2])
-          break
-        case 4:
-          print("haskell-"pkg[1]"-"pkg[2]"-ghc'$ghcVersion'-"pkg[3])
-        default:
-          break
-      }
-    }' | sort -u | grep -v dependency | xargs nix-env -i
+  for pkg in $(ghc-pkg check 2>&1 |tr -d '"'|awk /dependency/'{print $2}'|awk -F'-' '{OFS="-";$NF="";print substr($0, 0, length($0)-1)}'|sort -u);do installHsPkg $pkg;done
+  for pkg in $(ghc-pkg check 2>&1 |awk '/problems/{print substr($6, 0, length($6)-1)}');do installHsPkg $pkg;done
 }
 
 repairBrokenGrub() {
@@ -283,6 +292,16 @@ build32BitPackage() {
 
 installPackage() {
   nix-env -f $NIXPKGS_REPO -i "$@"
+}
+
+installPackageIntoProfile() {
+  local profile=$1
+  shift
+  sudo nix-env -f $NIXPKGS_REPO -p /nix/var/nix/profiles/$profile -iA "$@"
+}
+
+installIntoCurrentSystem() {
+  installPackageIntoProfile system $@
 }
 
 removePackage() {
