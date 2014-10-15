@@ -21,6 +21,7 @@ isRepo() {
 
 [ -z $NIXPKGS_REPO ] && die "You need to set NIXPKGS_REPO in your environment"
 [ ! isRepo ] && die "NIXPKGS_REPO isn't pointing to a nixpkgs checkout"
+export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:$NIX_PATH"
 
 # pkgName columnOffset
 pkgName() {
@@ -96,14 +97,13 @@ dirGroup() {
 }
 
 getProxySetting() {
-  NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:$NIX_PATH" nixos-option nix.proxy | awk 'f{print;f=0} /Value/{f=1}'
+  nixos-option nix.proxy | awk 'f{print;f=0} /Value/{f=1}'
 }
 
 setProxy() {
+  unset NIX_REMOTE
   export http_proxy=$1
   export NIX_CURL_FLAGS="--proxy=$http_proxy"
-  unset NIX_REMOTE
-  unset NIX_PATH
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo sed --follow-symlinks -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
   sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
@@ -111,10 +111,9 @@ setProxy() {
 }
 
 unsetProxy() {
-  unset http_proxy
   unset NIX_REMOTE
+  unset http_proxy
   export NIX_CURL_FLAGS="http_proxy=''"
-  export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
   export NIX_REMOTE="daemon"
@@ -321,7 +320,7 @@ startRepl() {
 }
 
 startShell() {
-  NIX_PATH="nixpkgs=$NIXPKGS_REPO" nix-shell
+  nix-shell
 }
 
 listSystemProfiles() {
@@ -516,6 +515,7 @@ case $1 in
         packStore
         ;;
     * )
+        getProxySetting
         usage
         ;;
 esac
