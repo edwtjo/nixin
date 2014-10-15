@@ -95,25 +95,29 @@ dirGroup() {
   ls -dl . | awk '{print $4}'
 }
 
+getProxySetting() {
+  NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:$NIX_PATH" nixos-option nix.proxy | awk 'f{print;f=0} /Value/{f=1}'
+}
+
 setProxy() {
-  lastPos=$(toCurrRepo)
   export http_proxy=$1
+  export NIX_CURL_FLAGS="--proxy=$http_proxy"
   unset NIX_REMOTE
   unset NIX_PATH
-  sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
-  sudo sed -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
-  sudo nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
-  checkoutRepo $lastPos
+  sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
+  sudo sed --follow-symlinks -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
+  export NIX_REMOTE="daemon"
 }
 
 unsetProxy() {
-  lastPos=$(toCurrRepo)
   unset http_proxy
   unset NIX_REMOTE
+  export NIX_CURL_FLAGS="http_proxy=''"
   export NIX_PATH="nixpkgs=$NIXPKGS_REPO:nixos=$NIXPKGS_REPO/nixos:NIX_PATH"
-  sudo sed -i -e "/proxy/d" /etc/nixos/configuration.nix
-  sudo nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
-  checkoutRepo $lastPos
+  sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
+  export NIX_REMOTE="daemon"
 }
 
 packStore() {
@@ -452,11 +456,15 @@ case $1 in
         case $1 in
             http://* )
                 echo "Setting proxy to: $1"
+                lastPos=$(toCurrRepo)
                 setProxy $1
+                checkoutRepo $lastPos
                 ;;
             * )
                 echo "Unsetting proxy"
+                lastPos=$(toCurrRepo)
                 unsetProxy
+                checkoutRepo $lastPos
                 ;;
         esac
         ;;
