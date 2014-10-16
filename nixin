@@ -97,7 +97,7 @@ dirGroup() {
 }
 
 getProxySetting() {
-  nixos-option nix.proxy | awk 'f{print;f=0} /Value/{f=1}'
+  nixos-option nix.proxy | awk 'f{print;f=0} /Value/{f=1}' | tr -d \"
 }
 
 setProxy() {
@@ -428,6 +428,10 @@ case $1 in
                 ;;
             h | hydra )
                 listLatestUnstable
+                ;;
+            p | proxy )
+                prx=$(getProxySetting)
+                [ -z "$prx" ] && echo "No proxy set" || echo $prx
                 ;;
             * )
                 listMyInstalledPkgs
