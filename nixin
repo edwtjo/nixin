@@ -196,8 +196,13 @@ repairBrokenGhcPkgs() {
 }
 
 repairBrokenGrub() {
-  system=$(ls -l /nix/var/nix/profiles/system-* | grep `ls -ld /run/booted-system|awk '{print $11}'`|awk '{print $9}'|awk -F'-' '{print $2}')
-  echo "Latest boot was $system, resetting current to booted system profile and rebuilding"
+  sudo mount /boot 2>&- >&-
+  local system=$(bootSha)
+  local systemDir=$(readlink /var/run/booted-system)
+  local systemNr=$(sudo grep -E "Configuration.*$system" /boot/grub/grub.cfg | awk '{print $5}' | sort -u | tail -n 1)
+  [ ! -L /nix/var/nix/profiles/system-$systemNr-link ] \
+      && sudo ln -s $systemDir /nix/var/nix/profiles/system-$systemNr-link
+  echo "Latest boot was $system($systemNr), resetting current to booted system profile and rebuilding"
   sudo nix-env -p /nix/var/nix/profiles/system -G $system \
       && cleanOld \
       && updateSystem
