@@ -203,7 +203,7 @@ repairBrokenGrub() {
   [ ! -L /nix/var/nix/profiles/system-$systemNr-link ] \
       && sudo ln -s $systemDir /nix/var/nix/profiles/system-$systemNr-link
   echo "Latest boot was $system($systemNr), resetting current to booted system profile and rebuilding"
-  sudo nix-env -p /nix/var/nix/profiles/system -G $system \
+  sudo nix-env -p /nix/var/nix/profiles/system -G $systemNr \
       && cleanOld \
       && updateSystem
 }
