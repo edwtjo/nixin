@@ -103,19 +103,21 @@ getProxySetting() {
 setProxy() {
   unset NIX_REMOTE
   export http_proxy=$1
-  export NIX_CURL_FLAGS="--proxy=$http_proxy"
+  export https_proxy=$1
+  export ftp_proxy=$1
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo sed --follow-symlinks -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
-  updateSystem --option use-binary-caches false
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
   export NIX_REMOTE="daemon"
 }
 
 unsetProxy() {
   unset NIX_REMOTE
-  unset http_proxy
-  export NIX_CURL_FLAGS="http_proxy=''"
+  export http_proxy=""
+  export https_proxy=""
+  export ftp_proxy=""
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
-  updateSystem --option use-binary-caches false
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
   export NIX_REMOTE="daemon"
 }
 
