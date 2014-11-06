@@ -101,7 +101,7 @@ getProxySetting() {
 }
 
 setProxy() {
-  unset NIX_REMOTE
+  export NIX_REMOTE=""
   export http_proxy=$1
   export https_proxy=$1
   export ftp_proxy=$1
@@ -113,7 +113,7 @@ setProxy() {
 }
 
 unsetProxy() {
-  unset NIX_REMOTE
+  export NIX_REMOTE=""
   export http_proxy=""
   export https_proxy=""
   export ftp_proxy=""
