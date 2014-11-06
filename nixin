@@ -480,6 +480,19 @@ case $1 in
                 ;;
         esac
         ;;
+    pu | proxy-update )
+        shift
+        case $1 in
+            http://* )
+                echo "Setting proxy to: $1"
+                setProxy $1
+                ;;
+            * )
+                echo "Unsetting proxy"
+                unsetProxy
+                ;;
+        esac
+        ;;
     c | clear )
         shift
         case $1 in
