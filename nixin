@@ -107,7 +107,7 @@ setProxy() {
   export ftp_proxy=$1
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
   sudo sed --follow-symlinks -i -e "\$i\ \ nix\.proxy \= \""$1"\"\;" /etc/nixos/configuration.nix
-  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -A system "<nixpkgs/nixos>" --option use-binary-caches false
   updateSystem --option use-binary-caches false
   export NIX_REMOTE="daemon"
 }
@@ -118,7 +118,7 @@ unsetProxy() {
   export https_proxy=""
   export ftp_proxy=""
   sudo sed --follow-symlinks -i -e "/proxy/d" /etc/nixos/configuration.nix
-  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos -A system "<nixos>" --option use-binary-caches false
+  sudo -E nix-build -I nixpkgs=$NIXPKGS_REPO -A system "<nixpkgs/nixos>" --option use-binary-caches false
   updateSystem --option use-binary-caches false
   export NIX_REMOTE="daemon"
 }
