@@ -172,31 +172,21 @@ repairBrokenDerivations() {
   sudo NIX_REMOTE= nix-store --verify --check-contents --repair
 }
 
-installHsPkg() {
-  local ghcVersion=`ghc --version | awk '{print $8}'`
-  local pkg=$@
-  local hsPkgs="haskellPackages_ghc"$(echo -n $ghcVersion|tr -d ".")
-  local pkgAttrCamel=$hsPkgs"."$(echo -n $pkg|awk -F '-' '
-     { $NF = "";
-       res = res $1
-       for (i = 2 ; i < NF ; i++) {
-         res = res toupper(substr($i,1,1)) tolower(substr($i,2));
-       }
-       print res;
-     }
-    ')
-  local pkgAttrDash=$hsPkgs"."$(echo -n $pkg|awk -F'-' '{OFS="-";$NF="";print substr($0, 0, length($0)-1)}')
-  echo "CC:"$pkgAttrCamel", D:"$pkgAttrDash
-  if [ "$pkgAttrCamel" == "$pkgAttrDash" ]; then
-    installIntoCurrentSystem $pkgAttrCamel
-  else
-    installIntoCurrentSystem $pkgAttrCamel || installIntoCurrentSystem $pkgAttrDash
-  fi
-}
-
 repairBrokenGhcPkgs() {
-  for pkg in $(ghc-pkg check 2>&1 |tr -d '"'|awk /dependency/'{print $2}'|awk -F'-' '{OFS="-";$NF="";print substr($0, 0, length($0)-1)}'|sort -u);do installHsPkg $pkg;done
-  for pkg in $(ghc-pkg check 2>&1 |awk '/problems/{print substr($6, 0, length($6)-1)}');do installHsPkg $pkg;done
+  echo <<EOF
+WARNING!!!!
+WARNING!!!!
+
+THIS WILL FUCK YOU UP IF YOU INCLUDE ANY GHC
+DEPENDENT PACKAGES IN YOUR SYSTEM PROFILE!!!
+
+WARNING!!!!
+WARNING!!!!
+EOF
+  sleep 60s
+  sudo nix-store --delete /nix/store/*-ghc-* --ignore-liveness
+  sudo nix-collect-garbage -d
+  echo "Now you will probably need to rebuild using: --option build-use-substitutes false"
 }
 
 repairBrokenGrub() {
