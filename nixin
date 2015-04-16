@@ -224,8 +224,27 @@ listSystemGenerations() {
   sudo nix-env -p /nix/var/nix/profiles/system --list-generations
 }
 
+getNixVersion() {
+  sudo nix-env --version | awk '{print $3}'
+}
+
+updateNix() {
+  local nixUrl=$(curl http://hydra.nixos.org/job/nix/master/build.x86_64-linux/latest | awk -F'"' '/build/{print $2}')
+  local nixVers=$(curl $nixUrl | awk -F'-' '/.nix.store.*.drv/{print substr($3,0,length($3)-14)}')
+  local nixClosure=$nixVers.closure.gz
+  local buildNr=$(echo $nixUrl | awk -F'/' '{print $5}')
+  local hash=$(echo $nixVers | awk -F'_' '/.nix.store.*.drv/{print substr($2,0,7)}')
+  if [ "$(getNixVersion)" != "$nixVers" ]
+  then
+      [ ! -f /tmp/nix-$nixClosure ] && wget http://hydra.nixos.org/build/$buildNr/nix/closure/$nixClosure -O /tmp/nix-$nixClosure
+      local nixStorePath=$(cat /tmp/nix-$nixClosure | gunzip | sudo nix-store --import | awk '/.*-nix.*/{print $1}')
+      sudo nix-env -i $nixStorePath
+  fi
+}
+
 updateSystem() {
-  sudo -E nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch $@
+  updateNix
+  sudo -E nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos switch --fallback $@
 }
 
 upgradeSystem() {
