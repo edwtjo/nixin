@@ -252,6 +252,10 @@ upgradeSystem() {
   sudo nixos-rebuild switch --upgrade
 }
 
+justFetches() {
+  nix-build -k $NIXPKGS_REPO --option build-chroot-dirs '/bin=/var/empty/ /nix/store=/var/empty /dev' --option binary-caches ''
+}
+
 buildVM() {
   if [ -z "$1" ];then
     die <<EOF
@@ -442,6 +446,9 @@ case $1 in
     f | find )
         shift
         findPackage $1
+        ;;
+    g | grab )
+        justFetches
         ;;
     l | list)
         shift
