@@ -326,7 +326,11 @@ build32BitPackage() {
 }
 
 installPackage() {
-  nix-env -f $NIXPKGS_REPO -i "$@"
+  nix-env -f $NIXPKGS_REPO --fallback -i "$@"
+}
+
+installPackageAttr() {
+  installPackage -A "$@"
 }
 
 installPackageIntoProfile() {
@@ -422,7 +426,7 @@ case $1 in
         ;;
     i | install )
         shift
-        installPackage $1
+        installPackageAttr $1
         ;;
     b | build )
         shift
