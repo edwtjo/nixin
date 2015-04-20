@@ -300,7 +300,7 @@ switchToProfile() {
 }
 
 findPackage() {
-  nix-env -qa \* -P -f $NIXPKGS_REPO | grep $1
+  nix-env -qa ".*$1.*" -P -f $NIXPKGS_REPO
 }
 
 buildPackage() {
