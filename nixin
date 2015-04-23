@@ -248,38 +248,9 @@ justFetches() {
 
 buildVM() {
   if [ -z "$1" ];then
-    die <<EOF
-Please provide a VM configuration
----------------------------------
- {config, pkgs, ...}:
- {
-   # You need to configure a root filesytem
-   fileSystems."/".label = "vmdisk";
-
-   # The test vm name is based on the hostname, so it's nice to set one
-   networking.hostName = "vmhost";
-
-   # Add a test user who can sudo to the root account for debugging
-   users.extraUsers.vm = {
-     password = "vm";
-     shell = "${pkgs.bash}/bin/bash";
-     group = "wheel";
-   };
-   security.sudo = {
-     enable = true;
-     wheelNeedsPassword = false;
-   };
-
-   # Enable your new service!
-   services =  {
-     myNewService = {
-       enable = true;
-     };
-   };
- }
-EOF
+    die "Please provide a VM configuration"
   else
-      NIXOS_CONFIG=`readlink -f $1` nixos-rebuild -I nixpkgs=$NIXPKGS_REPO -I nixos=$NIXPKGS_REPO/nixos build-vm
+      NIXOS_CONFIG=`readlink -f $1` nix-build -E '(import <nixpkgs/nixos> { configuration =$NIXOS_CONFIG; }).vm'
   fi
 }
 
