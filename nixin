@@ -390,6 +390,7 @@ case $1 in
         esac
         ;;
     d | delete )
+        shift
         removePackage $1
         ;;
     f | find )
