@@ -300,7 +300,8 @@ startRepl() {
 }
 
 startShell() {
-  nix-shell
+  nix-instantiate shell.nix --indirect --add-root $PWD/shell.drv
+  nix-shell $PWD/shell.drv
 }
 
 listSystemProfiles() {
