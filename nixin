@@ -172,23 +172,6 @@ repairBrokenDerivations() {
   sudo NIX_REMOTE= nix-store --verify --check-contents --repair
 }
 
-repairBrokenGhcPkgs() {
-  echo <<EOF
-WARNING!!!!
-WARNING!!!!
-
-THIS WILL FUCK YOU UP IF YOU INCLUDE ANY GHC
-DEPENDENT PACKAGES IN YOUR SYSTEM PROFILE!!!
-
-WARNING!!!!
-WARNING!!!!
-EOF
-  sleep 60s
-  sudo nix-store --delete /nix/store/*-ghc-* --ignore-liveness
-  sudo nix-collect-garbage -d
-  echo "Now you will probably need to rebuild using: --option build-use-substitutes false"
-}
-
 repairBrokenGrub() {
   sudo mount /boot 2>&- >&-
   local system=$(bootSha)
@@ -513,9 +496,6 @@ case $1 in
         case $1 in
             d | derivation )
                 repairBrokenDerivations
-                ;;
-            g | ghcs )
-                repairBrokenGhcPkgs
                 ;;
             r | grub )
                 repairBrokenGrub
