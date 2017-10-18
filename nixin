@@ -257,6 +257,10 @@ findPackage() {
   nix-env -qa ".*$1.*" -P -f $NIXPKGS_REPO
 }
 
+findInSet() {
+  nix-env -f $NIXPKGS_REPO -qaP -A $1 ".*$2.*"
+}
+
 buildPackage() {
   nix-build -f $NIXPKGS_REPO -A $1 --argstr system $2
 }
@@ -396,6 +400,10 @@ case $1 in
     f | find )
         shift
         findPackage $1
+        ;;
+    sf | set-find)
+        shift
+        findInSet $1 $2
         ;;
     g | grab )
         justFetches
